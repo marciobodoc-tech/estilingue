@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de Perguntas – Estilingue do Saber</title>
+<style>
+  :root{ --terra:#b3401b; --madeira:#6b3f1f; --creme:#fff6e6; --verde:#3c9a4a; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#f3e6cf; color:#3a2410; font-family:"Trebuchet MS","Segoe UI",Roboto,Arial,sans-serif; }
+  header{ background:var(--madeira); color:#fff6e6; padding:14px 16px; }
+  header h1{ margin:0; font-size:22px; } header p{ margin:2px 0 0; font-size:14px; opacity:.9; }
+  main{ max-width:960px; margin:0 auto; padding:16px; display:grid; gap:14px; }
+  section{ background:var(--creme); border:3px solid #d9b98f; border-radius:14px; padding:14px; }
+  h2{ margin:0 0 10px; font-size:17px; color:var(--terra); }
+  .linha{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  select,input,textarea{ font:inherit; font-size:16px; padding:8px 10px; border:2px solid #d9b98f; border-radius:10px; background:#fff; color:#3a2410; }
+  select{ min-width:200px; } textarea{ width:100%; min-height:60px; resize:vertical; }
+  input{ width:100%; }
+  button{ font:inherit; font-weight:bold; font-size:15px; border:0; border-radius:10px; padding:9px 14px; cursor:pointer; background:#f2c14e; color:#3a2410; }
+  button.verde{ background:var(--verde); color:#fff; } button.vermelho{ background:#d64545; color:#fff; } button.cinza{ background:#e3d6c0; }
+  .grade{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:640px){ .grade{ grid-template-columns:1fr; } }
+  label{ font-size:14px; font-weight:bold; display:block; margin-bottom:4px; }
+  table{ width:100%; border-collapse:collapse; font-size:15px; }
+  th,td{ text-align:left; padding:8px 6px; border-bottom:1px solid #e6d3b3; vertical-align:top; }
+  th{ font-size:13px; color:#7a5a3a; }
+  td.acoes{ white-space:nowrap; } td.acoes button{ padding:5px 9px; font-size:13px; }
+  .certa{ color:#1d7a2c; font-weight:bold; } .errada{ color:#a04040; }
+  .aviso{ font-size:13px; color:#a04040; min-height:18px; margin-top:6px; }
+  .dica{ font-size:14px; line-height:1.5; }
+  .vazio{ color:#8a7058; font-style:italic; padding:10px 0; }
+  footer{ text-align:center; font-size:14px; padding:6px 16px 24px; }
+  .tabela-wrap{ overflow-x:auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Editor de Perguntas – Estilingue do Saber</h1>
+  <p>Projeto Sesc Ler Bodocó · Professor Márcio Brito</p>
+</header>
+<main>
+  <section>
+    <h2>1. Matéria</h2>
+    <div class="linha">
+      <select id="selMateria"></select>
+      <button id="novaMateria">+ Nova matéria</button>
+      <button class="cinza" id="renomearMateria">Renomear</button>
+      <button class="vermelho" id="excluirMateria">Excluir</button>
+    </div>
+  </section>
+  <section>
+    <h2>2. Ano ou grupo</h2>
+    <div class="linha">
+      <select id="selAno"></select>
+      <button id="novoAno">+ Novo ano/grupo</button>
+      <button class="cinza" id="renomearAno">Renomear</button>
+      <button class="vermelho" id="excluirAno">Excluir</button>
+    </div>
+  </section>
+  <section>
+    <h2 id="tituloForm">3. Nova pergunta</h2>
+    <label for="fPergunta">Pergunta</label>
+    <textarea id="fPergunta" placeholder="Ex.: Quanto é 2 + 3?"></textarea>
+    <div class="grade" style="margin-top:10px">
+      <div><label for="fCerta">Resposta certa</label><input id="fCerta" placeholder="Ex.: 5"></div>
+      <div><label for="fE1">Resposta errada 1</label><input id="fE1" placeholder="Ex.: 4"></div>
+      <div><label for="fE2">Resposta errada 2 (opcional)</label><input id="fE2" placeholder="Ex.: 6"></div>
+      <div><label for="fE3">Resposta errada 3 (opcional)</label><input id="fE3" placeholder="Ex.: 7"></div>
+    </div>
+    <div class="aviso" id="aviso"></div>
+    <div class="linha" style="margin-top:6px">
+      <button class="verde" id="salvar">Adicionar pergunta</button>
+      <button class="cinza" id="cancelar" hidden>Cancelar edição</button>
+    </div>
+  </section>
+  <section>
+    <h2 id="tituloLista">Perguntas</h2>
+    <div class="tabela-wrap"><table>
+      <thead><tr><th>#</th><th>Pergunta</th><th>Certa</th><th>Erradas</th><th></th></tr></thead>
+      <tbody id="lista"></tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>4. Salvar</h2>
+    <div class="linha">
+      <button class="verde" id="baixar">Baixar perguntas.js</button>
+      <label class="cinza" style="margin:0;font-weight:bold;background:#e3d6c0;padding:9px 14px;border-radius:10px;cursor:pointer">Abrir outro perguntas.js<input type="file" id="abrir" accept=".js,.json,.txt" hidden></label>
+    </div>
+    <p class="dica">Depois de baixar, substitua o arquivo <b>perguntas.js</b> do site do jogo (no GitHub) por este novo. Em 1 ou 2 minutos o jogo no Quest já mostra as novas perguntas (recarregue a página).<br>
+    Dica: respostas curtas (até uns 20 letras) ficam mais fáceis de ler nas placas.</p>
+  </section>
+</main>
+<footer>Estilingue do Saber · Projeto Sesc Ler Bodocó · Professor Márcio Brito</footer>
+
+<script src="perguntas.js"></script>
+<script>
+let banco = JSON.parse(JSON.stringify(window.BANCO_DE_PERGUNTAS || []));
+let iMat = 0, ano = null, editando = -1, alterado = false;
+const $ = id => document.getElementById(id);
+
+function marcarAlterado(){ alterado = true; }
+window.addEventListener('beforeunload', e => { if (alterado) { e.preventDefault(); e.returnValue = ''; } });
+
+function anos(){ const m = banco[iMat]; return m ? Object.keys(m.perguntas) : []; }
+function render(){
+  const sm = $('selMateria'); sm.innerHTML = '';
+  banco.forEach((m, i) => { const o = new Option(m.materia, i); sm.add(o); });
+  if (iMat >= banco.length) iMat = Math.max(0, banco.length - 1);
+  sm.value = iMat;
+  const sa = $('selAno'); sa.innerHTML = '';
+  const as = anos(); if (!as.includes(ano)) ano = as[0] ?? null;
+  as.forEach(a => sa.add(new Option(`${a} (${banco[iMat].perguntas[a].length})`, a)));
+  if (ano !== null) sa.value = ano;
+  const tb = $('lista'); tb.innerHTML = '';
+  const lista = (banco[iMat] && ano !== null) ? banco[iMat].perguntas[ano] : [];
+  $('tituloLista').textContent = banco[iMat] && ano !== null ? `Perguntas de ${banco[iMat].materia} · ${ano} (${lista.length})` : 'Perguntas';
+  if (!lista.length) { tb.innerHTML = `<tr><td colspan="5" class="vazio">${banco.length ? (ano === null ? 'Crie um ano/grupo para esta matéria.' : 'Nenhuma pergunta ainda. Use o formulário acima.') : 'Crie uma matéria para começar.'}</td></tr>`; }
+  lista.forEach((q, i) => {
+    const tr = document.createElement('tr');
+    const td = (txt, cls) => { const t = document.createElement('td'); t.textContent = txt; if (cls) t.className = cls; tr.appendChild(t); };
+    td(i + 1); td(q.pergunta); td(q.certa, 'certa'); td((q.erradas || []).join(' · '), 'errada');
+    const ac = document.createElement('td'); ac.className = 'acoes';
+    const be = document.createElement('button'); be.textContent = 'Editar'; be.onclick = () => editar(i);
+    const bx = document.createElement('button'); bx.textContent = 'Excluir'; bx.className = 'vermelho'; bx.style.marginLeft = '4px';
+    bx.onclick = () => { if (confirm('Excluir esta pergunta?')) { lista.splice(i, 1); marcarAlterado(); cancelar(); render(); } };
+    ac.append(be, bx); tr.appendChild(ac); tb.appendChild(tr);
+  });
+}
+function editar(i){
+  const q = banco[iMat].perguntas[ano][i]; editando = i;
+  $('fPergunta').value = q.pergunta; $('fCerta').value = q.certa;
+  ['fE1','fE2','fE3'].forEach((id, k) => $(id).value = (q.erradas || [])[k] || '');
+  $('salvar').textContent = 'Salvar alterações'; $('cancelar').hidden = false; $('tituloForm').textContent = `3. Editando a pergunta ${i + 1}`;
+  $('fPergunta').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('fPergunta').focus();
+}
+function cancelar(){
+  editando = -1; ['fPergunta','fCerta','fE1','fE2','fE3'].forEach(id => $(id).value = '');
+  $('salvar').textContent = 'Adicionar pergunta'; $('cancelar').hidden = true; $('tituloForm').textContent = '3. Nova pergunta'; $('aviso').textContent = '';
+}
+$('salvar').onclick = () => {
+  const av = $('aviso'); av.textContent = '';
+  if (!banco[iMat]) { av.textContent = 'Crie uma matéria primeiro.'; return; }
+  if (ano === null) { av.textContent = 'Crie um ano/grupo primeiro.'; return; }
+  const pergunta = $('fPergunta').value.trim(), certa = $('fCerta').value.trim();
+  const erradas = ['fE1','fE2','fE3'].map(id => $(id).value.trim()).filter(Boolean);
+  if (!pergunta) { av.textContent = 'Escreva a pergunta.'; return; }
+  if (!certa) { av.textContent = 'Escreva a resposta certa.'; return; }
+  if (!erradas.length) { av.textContent = 'Escreva pelo menos uma resposta errada.'; return; }
+  if (erradas.some(e => e.toLowerCase() === certa.toLowerCase())) { av.textContent = 'Uma resposta errada está igual à certa.'; return; }
+  const q = { pergunta, certa, erradas };
+  const lista = banco[iMat].perguntas[ano];
+  if (editando >= 0) lista[editando] = q; else lista.push(q);
+  marcarAlterado();
+  const longa = [certa, ...erradas].some(t => t.length > 22);
+  cancelar(); render();
+  if (longa) av.textContent = 'Salvo. Atenção: há resposta longa, ela vai aparecer com letra menor na placa.';
+};
+$('cancelar').onclick = cancelar;
+$('selMateria').onchange = e => { iMat = +e.target.value; ano = null; cancelar(); render(); };
+$('selAno').onchange = e => { ano = e.target.value; cancelar(); render(); };
+$('novaMateria').onclick = () => {
+  const n = (prompt('Nome da nova matéria (ex.: Ciências):') || '').trim(); if (!n) return;
+  if (banco.some(m => m.materia.toLowerCase() === n.toLowerCase())) { alert('Já existe uma matéria com esse nome.'); return; }
+  banco.push({ materia: n, perguntas: { '1º ano': [] } }); iMat = banco.length - 1; ano = '1º ano'; marcarAlterado(); cancelar(); render();
+};
+$('renomearMateria').onclick = () => { const m = banco[iMat]; if (!m) return; const n = (prompt('Novo nome da matéria:', m.materia) || '').trim(); if (n) { m.materia = n; marcarAlterado(); render(); } };
+$('excluirMateria').onclick = () => { const m = banco[iMat]; if (!m) return; if (confirm(`Excluir a matéria "${m.materia}" e TODAS as perguntas dela?`)) { banco.splice(iMat, 1); iMat = 0; ano = null; marcarAlterado(); cancelar(); render(); } };
+$('novoAno').onclick = () => {
+  const m = banco[iMat]; if (!m) { alert('Crie uma matéria primeiro.'); return; }
+  const n = (prompt('Nome do ano ou grupo (ex.: 3º ano, EJA - Módulo 1):') || '').trim(); if (!n) return;
+  if (m.perguntas[n]) { alert('Esse ano/grupo já existe.'); return; }
+  m.perguntas[n] = []; ano = n; marcarAlterado(); cancelar(); render();
+};
+$('renomearAno').onclick = () => {
+  const m = banco[iMat]; if (!m || ano === null) return; const n = (prompt('Novo nome do ano/grupo:', ano) || '').trim(); if (!n || n === ano) return;
+  if (m.perguntas[n]) { alert('Esse nome já existe.'); return; }
+  const novo = {}; for (const k of Object.keys(m.perguntas)) novo[k === ano ? n : k] = m.perguntas[k]; m.perguntas = novo; ano = n; marcarAlterado(); render();
+};
+$('excluirAno').onclick = () => { const m = banco[iMat]; if (!m || ano === null) return; if (confirm(`Excluir "${ano}" e todas as perguntas dele?`)) { delete m.perguntas[ano]; ano = null; marcarAlterado(); cancelar(); render(); } };
+
+function gerarArquivo(){
+  const cab = `/* =====================================================================
+   ESTILINGUE DO SABER - Banco de perguntas
+   Projeto Sesc Ler Bodocó - Professor Márcio Brito
+   Gerado pelo editor.html em ${new Date().toLocaleString('pt-BR')}
+   Para mudar as perguntas, abra o editor.html, faça as mudanças e baixe
+   um novo perguntas.js.
+   ===================================================================== */
+
+`;
+  const linhas = ['window.BANCO_DE_PERGUNTAS = ['];
+  banco.forEach((m, i) => {
+    linhas.push('  {', `    "materia": ${JSON.stringify(m.materia)},`, '    "perguntas": {');
+    const ks = Object.keys(m.perguntas);
+    ks.forEach((k, j) => {
+      linhas.push(`      ${JSON.stringify(k)}: [`);
+      m.perguntas[k].forEach((q, n) => linhas.push(`        { "pergunta": ${JSON.stringify(q.pergunta)}, "certa": ${JSON.stringify(q.certa)}, "erradas": ${JSON.stringify(q.erradas)} }${n < m.perguntas[k].length - 1 ? ',' : ''}`));
+      linhas.push(`      ]${j < ks.length - 1 ? ',' : ''}`);
+    });
+    linhas.push('    }', `  }${i < banco.length - 1 ? ',' : ''}`);
+  });
+  linhas.push('];', '');
+  return cab + linhas.join('\n');
+}
+$('baixar').onclick = () => {
+  const blob = new Blob([gerarArquivo()], { type: 'text/javascript;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'perguntas.js'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000); alterado = false;
+};
+$('abrir').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const txt = await f.text(); const ini = txt.indexOf('[', txt.indexOf('BANCO_DE_PERGUNTAS')); const fim = txt.lastIndexOf(']');
+    const dados = JSON.parse(txt.slice(ini, fim + 1));
+    if (!Array.isArray(dados)) throw new Error('formato');
+    banco = dados; iMat = 0; ano = null; marcarAlterado(); cancelar(); render();
+  } catch (err) { alert('Não consegui ler esse arquivo. Ele precisa ser um perguntas.js do Estilingue do Saber.'); }
+  e.target.value = '';
+};
+render();
+</script>
+</body>
+</html>
