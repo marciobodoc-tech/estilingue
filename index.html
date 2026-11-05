@@ -37,7 +37,7 @@
   <div class="card">
     <div class="flags"></div>
     <h1>Estilingue do Saber</h1>
-    <p class="sub">Matemática e Português do 1º ao 5º ano · cenário inspirado em Bodocó-PE</p>
+    <p class="sub">Matemática e Português do 1º ao 5º ano · na Praça da Igreja Matriz de Bodocó-PE</p>
     <div class="btns">
       <button id="btnVR" disabled>Verificando VR…</button>
       <button id="btn2D">Jogar na tela (teste)</button>
@@ -148,15 +148,23 @@ scene.add(new THREE.HemisphereLight(0xe2f0ff,0xa86f3a,1.5));
   const chao=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshLambertMaterial({map:tex}));
   chao.rotation.x=-Math.PI/2; scene.add(chao);
 }
-// rua de calçamento (paralelepípedo)
+// ===== PRAÇA DA IGREJA MATRIZ DE BODOCÓ (recriação a partir de fotos) =====
+const BRANCO_IGREJA='#f6f4ee', VERDE_AGUA='#3fb3a6', DOURADO='#d9a03a';
+function geoComUV(w,d,ru,rv){ const g=new THREE.PlaneGeometry(w,d); const uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i,uv.getX(i)*ru,uv.getY(i)*rv); return g; }
+// piso de pedras claras + faixas de tijolo vermelho
 {
-  const tex=canvasTex(256,256,(g,w,h)=>{ g.fillStyle='#6f675e'; g.fillRect(0,0,w,h); const rows=8, cols=5, cw=w/cols, ch=h/rows;
-    for(let r=0;r<rows;r++) for(let c=-1;c<=cols;c++){ const x=c*cw+(r%2)*cw/2; const t=140+Math.floor(rand()*40); g.fillStyle=`rgb(${t},${t-6},${t-14})`; rr(g,x+3,r*ch+3,cw-6,ch-6,6); g.fill(); } });
-  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(4,28);
-  const rua=new THREE.Mesh(new THREE.PlaneGeometry(12,96),new THREE.MeshLambertMaterial({map:tex}));
-  rua.rotation.x=-Math.PI/2; rua.position.set(0,0.012,-32); scene.add(rua);
+  const tex=canvasTex(256,256,(g,w,h)=>{ g.fillStyle='#8e8a84'; g.fillRect(0,0,w,h); const rows=10, cols=7, cw=w/cols, ch=h/rows;
+    for(let r=0;r<rows;r++) for(let c=-1;c<=cols;c++){ const x=c*cw+(r%2)*cw/2; const t=185+Math.floor(rand()*35); g.fillStyle=`rgb(${t},${t-3},${t-8})`; rr(g,x+2,r*ch+2,cw-4,ch-4,5); g.fill(); } });
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  const piso=new THREE.Mesh(geoComUV(70,100,26,37),new THREE.MeshLambertMaterial({map:tex}));
+  piso.rotation.x=-Math.PI/2; piso.position.set(13,0.01,-25); scene.add(piso);
+  const tij=canvasTex(128,32,(g,w,h)=>{ g.fillStyle='#7a4034'; g.fillRect(0,0,w,h); for(let r=0;r<2;r++) for(let c=-1;c<8;c++){ const x=c*18+(r%2)*9; const t=Math.floor(rand()*35); g.fillStyle=`rgb(${185+t},${95+t},${80+t})`; g.fillRect(x+1,r*16+1,16,14); } });
+  tij.wrapS=tij.wrapT=THREE.RepeatWrapping; const tijMat=new THREE.MeshLambertMaterial({map:tij});
+  for(const [x,z,w,d] of [[-12,-25,1.4,100],[13,10,50,1.4],[13,-15,50,1.4],[38,-25,1.4,100]]){
+    const f=new THREE.Mesh(geoComUV(w,d,Math.max(1,w/1.4),Math.max(1,d/0.35)),tijMat); f.rotation.x=-Math.PI/2; f.position.set(x,0.02,z); scene.add(f); }
+  scene.userData.tijMat=tijMat;
 }
-// casario colorido com platibanda
+// casario colorido em volta da praça
 const CORES_CASA=['#f2c14e','#4ea1d3','#e86f68','#7cc47c','#f3ead3','#c08ad6','#f29e4c','#58c2b4','#f7a1b5'];
 const CORES_PORTA=['#6b3f22','#2f6db5','#2e8b57','#8b2f2f'];
 function fachada(color,w,h,v){ return canvasTex(256,Math.round(256*h/w),(g,W,H)=>{
@@ -169,34 +177,129 @@ function fachada(color,w,h,v){ return canvasTex(256,Math.round(256*h/w),(g,W,H)=
   g.strokeStyle='rgba(0,0,0,.3)'; g.lineWidth=2; g.beginPath(); g.moveTo(dx+dw/2,dy); g.lineTo(dx+dw/2,dy+dh); g.stroke();
   for(const wx of (v%2?[W*.5,W*.75]:[W*.12,W*.72])){ const ww=W*.17, wh=H*.26, wy=H*.37; g.fillStyle='#fff'; g.fillRect(wx-4,wy-4,ww+8,wh+8); g.fillStyle=CORES_PORTA[(v+1)%4]; g.fillRect(wx,wy,ww/2-1,wh); g.fillRect(wx+ww/2+1,wy,ww/2-1,wh); }
 }); }
-for(const lado of [-1,1]){
-  let z=14;
-  while(z>-50){
-    const w=4.5+rand()*2.2, h=3.6+rand()*1.3, d=6, color=CORES_CASA[Math.floor(rand()*CORES_CASA.length)], v=Math.floor(rand()*4);
-    const parede=lam(color), frente=new THREE.MeshLambertMaterial({map:fachada(color,w,h,v)});
-    const casa=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),[parede,parede,lam('#a9502c'),parede,frente,parede]);
-    casa.position.set(lado*(6+d/2),h/2,z-w/2); casa.rotation.y=lado<0?Math.PI/2:-Math.PI/2; scene.add(casa);
-    z-=w+0.2;
-  }
+function casa(x,z,rotY,w,h,color,v,d=7){
+  const parede=lam(color), frente=new THREE.MeshLambertMaterial({map:fachada(color,w,h,v)});
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),[parede,parede,lam('#a9502c'),parede,frente,parede]);
+  m.position.set(x-Math.sin(rotY)*d/2,h/2,z-Math.cos(rotY)*d/2); m.rotation.y=rotY; scene.add(m); return m;
 }
-// igreja na praça
-{
-  const g=new THREE.Group(); g.position.set(0,0,-64); scene.add(g);
-  const branco=lam('#f7f4ec'), azul=lam('#2f6db5');
-  const frente=new THREE.MeshLambertMaterial({map:canvasTex(256,205,(c,W,H)=>{
-    c.fillStyle='#f7f4ec'; c.fillRect(0,0,W,H); c.fillStyle='#2f6db5'; c.fillRect(0,0,W,8); c.fillRect(0,0,12,H); c.fillRect(W-12,0,12,H); c.fillRect(0,H-12,W,12);
-    c.fillStyle='#5a3418'; const dw=W*.22, dh=H*.46, dx=W/2-dw/2, dy=H-12-dh; c.beginPath(); c.moveTo(dx,dy+dh); c.lineTo(dx,dy+dw/2); c.arc(W/2,dy+dw/2,dw/2,Math.PI,0); c.lineTo(dx+dw,dy+dh); c.closePath(); c.fill();
-    c.fillStyle='#f2c14e'; c.beginPath(); c.arc(W/2,H*.26,W*.07,0,7); c.fill(); c.strokeStyle='#2f6db5'; c.lineWidth=5; c.stroke();
-    c.fillStyle='#2f6db5'; for(const x of [W*.2,W*.8]){ c.fillRect(x-10,H*.38,20,42); c.beginPath(); c.arc(x,H*.38,10,Math.PI,0); c.fill(); }
+function fileira(ax,az,bx,bz,rotY){ // casas com a frente na linha A→B, viradas para rotY
+  const L=Math.hypot(bx-ax,bz-az), ux=(bx-ax)/L, uz=(bz-az)/L; let s=0;
+  while(s<L-3){ const w=Math.min(4.5+rand()*2.2,L-s), h=3.6+rand()*1.4; const c=s+w/2;
+    casa(ax+ux*c,az+uz*c,rotY,w-0.15,h,CORES_CASA[Math.floor(rand()*CORES_CASA.length)],Math.floor(rand()*4)); s+=w; }
+}
+fileira(-17,14,-17,-60,Math.PI/2);   // lado esquerdo, de frente para a praça
+fileira(-17,24,46,24,Math.PI);       // atrás do jogador
+fileira(48,24,48,-22,-Math.PI/2);    // lado direito
+fileira(-17,-76,48,-76,0);           // fundo, atrás da igreja
+
+// ---------- Igreja Matriz ----------
+function arcoOgival(c,x,yTopo,w,yBase){ const sy=yTopo+w*.866; c.beginPath(); c.moveTo(x,yBase); c.lineTo(x,sy); c.arc(x+w,sy,w,Math.PI,Math.PI*4/3); c.arc(x,sy,w,-Math.PI/3,0); c.lineTo(x+w,yBase); c.closePath(); }
+function janelaOgival(c,x,yTopo,w,yBase,tipo='vitral'){
+  const b=w*.16;
+  c.fillStyle=VERDE_AGUA; arcoOgival(c,x-b,yTopo-b*1.4,w+2*b,yBase+b*.4); c.fill();
+  c.fillStyle=DOURADO; arcoOgival(c,x,yTopo,w,yBase); c.fill();
+  const g=w*.12; c.save(); arcoOgival(c,x+g,yTopo+g*1.6,w-2*g,yBase-g); c.clip();
+  if(tipo==='porta'){ // tímpano dourado + porta de madeira
+    const sy=yTopo+w*.866; c.fillStyle='#e8c46a'; c.fillRect(x,yTopo,w,sy-yTopo+w*.05);
+    c.strokeStyle='#b5802a'; c.lineWidth=Math.max(2,w*.02); for(let i=1;i<6;i++){ c.beginPath(); c.moveTo(x+w/2,sy+w*.05); c.lineTo(x+w*i/6,yTopo); c.stroke(); }
+    c.fillStyle='#7a4a24'; c.fillRect(x,sy+w*.05,w,yBase-sy); c.strokeStyle='#5a3418'; c.lineWidth=Math.max(2,w*.03);
+    c.beginPath(); c.moveTo(x+w/2,sy+w*.05); c.lineTo(x+w/2,yBase); c.stroke();
+    for(const k of [.3,.6]){ c.strokeRect(x+w*.08,sy+(yBase-sy)*k,w*.34,(yBase-sy)*.25); c.strokeRect(x+w*.58,sy+(yBase-sy)*k,w*.34,(yBase-sy)*.25); }
+  } else if(tipo==='rosacea'){ // janela grande com rendilhado
+    c.fillStyle='#f3ead2'; c.fillRect(x,yTopo,w,yBase-yTopo); c.strokeStyle='#a9792c'; c.lineWidth=Math.max(1.5,w*.025);
+    const cx=x+w/2, cy=yTopo+w*.75, r=w*.3; c.beginPath(); c.arc(cx,cy,r,0,7); c.stroke();
+    for(let i=0;i<8;i++){ const a=i*Math.PI/4; c.beginPath(); c.arc(cx+Math.cos(a)*r*.55,cy+Math.sin(a)*r*.55,r*.38,0,7); c.stroke(); }
+    for(let y=cy+r*1.2;y<yBase;y+=w*.12){ c.beginPath(); c.moveTo(x,y); c.lineTo(x+w,y); c.stroke(); }
+    for(const k of [.33,.66]){ c.beginPath(); c.moveTo(x+w*k,cy+r); c.lineTo(x+w*k,yBase); c.stroke(); }
+  } else { // vitral em losangos
+    c.fillStyle='#f4ecd8'; c.fillRect(x,yTopo,w,yBase-yTopo); c.strokeStyle='#b8862e'; c.lineWidth=Math.max(1,w*.04); const p=w*.3;
+    for(let k=-12;k<30;k++){ c.beginPath(); c.moveTo(x+k*p,yTopo); c.lineTo(x+k*p+(yBase-yTopo),yBase); c.stroke(); c.beginPath(); c.moveTo(x+k*p,yTopo); c.lineTo(x+k*p-(yBase-yTopo),yBase); c.stroke(); }
+  }
+  c.restore();
+}
+const PXM=32; // pixels por metro nas texturas da igreja
+function texIgreja(wM,hM,draw,{base=true,cornija=true,pilastras=true}={}){
+  return new THREE.MeshLambertMaterial({map:canvasTex(Math.round(wM*PXM),Math.round(hM*PXM),(c,W,H)=>{
+    const m=v=>v*PXM, Y=v=>H-v*PXM; // Y(): altura em metros a partir do chão
+    c.fillStyle=BRANCO_IGREJA; c.fillRect(0,0,W,H);
+    if(base){ c.fillStyle='#a49a8a'; c.fillRect(0,Y(1.1),W,m(1.1)); for(let y=0;y<1.1;y+=.28) for(let x=-1;x<wM+1;x+=.6){ const t=Math.floor(rand()*30); c.fillStyle=`rgb(${150+t},${142+t},${128+t})`; c.fillRect(m(x+((y*10|0)%2)*.3)+1,Y(y+.28)+1,m(.6)-2,m(.28)-2); } }
+    if(pilastras){ c.fillStyle=VERDE_AGUA; c.fillRect(0,0,m(.18),H); c.fillRect(W-m(.18),0,m(.18),H); }
+    draw(c,W,H,m,Y);
+    if(cornija){ c.fillStyle=DOURADO; c.fillRect(0,0,W,m(.32)); c.fillStyle=VERDE_AGUA; c.fillRect(0,m(.32),W,m(.08)); }
   })});
-  const corpo=new THREE.Mesh(new THREE.BoxGeometry(10,8,14),[branco,branco,lam('#a9502c'),branco,frente,branco]); corpo.position.set(0,4,-7); g.add(corpo);
-  const tri=new THREE.Shape(); tri.moveTo(-5.2,0); tri.lineTo(5.2,0); tri.lineTo(0,2.8); tri.closePath();
-  const front=new THREE.Mesh(new THREE.ExtrudeGeometry(tri,{depth:0.5,bevelEnabled:false}),branco); front.position.set(0,8,-0.45); g.add(front);
-  const torreTex=new THREE.MeshLambertMaterial({map:canvasTex(128,256,(c,W,H)=>{ c.fillStyle='#f7f4ec'; c.fillRect(0,0,W,H); c.fillStyle='#2f6db5'; c.fillRect(0,0,8,H); c.fillRect(W-8,0,8,H); c.fillStyle='#3a2a1a'; c.fillRect(W/2-22,H*.25,44,70); c.beginPath(); c.arc(W/2,H*.25,22,Math.PI,0); c.fill(); c.fillStyle='#e0a526'; c.beginPath(); c.arc(W/2,H*.25+40,14,0,7); c.fill(); })});
-  const torre=new THREE.Mesh(new THREE.BoxGeometry(3.2,7,3.2),[torreTex,torreTex,branco,branco,torreTex,torreTex]); torre.position.set(0,11.5,-3); g.add(torre);
-  const teto=new THREE.Mesh(new THREE.ConeGeometry(2.4,3.2,4),azul); teto.rotation.y=Math.PI/4; teto.position.set(0,16.6,-3); g.add(teto);
-  const cruzMat=lam('#3a2a1a'); const c1=new THREE.Mesh(new THREE.BoxGeometry(.18,1.5,.18),cruzMat); c1.position.set(0,18.9,-3); g.add(c1);
-  const c2=new THREE.Mesh(new THREE.BoxGeometry(.85,.18,.18),cruzMat); c2.position.set(0,19.2,-3); g.add(c2);
+}
+const matriz=new THREE.Group(); matriz.position.set(18,0,-38); matriz.rotation.y=-0.3; scene.add(matriz);
+{
+  const branco=lam(BRANCO_IGREJA), dourado=lam(DOURADO), verde=lam(VERDE_AGUA);
+  // escadaria e adro
+  [[26,.2,10.6,'#9c9993'],[25,.4,10,'#a8a59f'],[24,.6,9.4,'#b8b5af']].forEach(([w,h,d,cor])=>{ const s=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),lam(cor)); s.position.set(0,h/2,-1+d/2); matriz.add(s); });
+  const faixa=new THREE.Mesh(geoComUV(30,2,21,6),scene.userData.tijMat); faixa.rotation.x=-Math.PI/2; faixa.position.set(0,.025,11); matriz.add(faixa);
+  const ig=new THREE.Group(); ig.position.y=.6; matriz.add(ig);
+  // nave
+  const naveLado=texIgreja(28,8,(c,W,H,m,Y)=>{
+    for(let i=0;i<8;i++){ const x=2.2+i*3.3; if(i===0||i===7){ janelaOgival(c,m(x-.65),Y(4.4),m(1.3),Y(.05),'porta'); } else janelaOgival(c,m(x-.5),Y(6.8),m(1.0),Y(2.2)); }
+    c.fillStyle=VERDE_AGUA; for(let i=0;i<8;i++){ const x=.55+i*3.3+3.3/2+.1; if(x<27.5) c.fillRect(m(x)-2,Y(7.6),4,m(6.5)); }
+  });
+  const naveFrente=texIgreja(12,8,(c,W,H,m,Y)=>{
+    for(const x of [.6,9.4]){ janelaOgival(c,m(x),Y(7.0),m(2.0),Y(3.6),'rosacea');
+      c.fillStyle='#ece6d8'; c.fillRect(m(x+.2),Y(3.1),m(1.6),m(.75)); c.strokeStyle='#c9bfa8'; c.lineWidth=3; c.strokeRect(m(x+.3),Y(3.0),m(1.4),m(.55)); }
+  });
+  const nave=new THREE.Mesh(new THREE.BoxGeometry(12,8,28),[naveLado,naveLado,lam('#d7d3cb'),branco,naveFrente,branco]); nave.position.set(0,4,-14); ig.add(nave);
+  const tri=new THREE.Shape(); tri.moveTo(-6.2,0); tri.lineTo(6.2,0); tri.lineTo(0,2.2); tri.closePath();
+  const telhado=new THREE.Mesh(new THREE.ExtrudeGeometry(tri,{depth:28.4,bevelEnabled:false}),[branco,lam('#d7d3cb')]); telhado.position.set(0,8,-28.2); ig.add(telhado);
+  for(const s of [-1,1]){ const t=new THREE.Mesh(new THREE.BoxGeometry(6.6,.2,.3),verde); t.position.set(s*3.1,9.12,.25); t.rotation.z=-s*Math.atan2(2.2,6.2); ig.add(t);
+    const corn=new THREE.Mesh(new THREE.BoxGeometry(.25,.3,28.2),dourado); corn.position.set(s*6.05,7.9,-14); ig.add(corn); }
+  // bloco central da fachada (porta principal)
+  const baseFrente=texIgreja(5.6,11,(c,W,H,m,Y)=>{
+    janelaOgival(c,m(1.6),Y(6.4),m(2.4),Y(0),'porta');
+    c.fillStyle=VERDE_AGUA; c.beginPath(); c.arc(m(2.8),Y(8.4),m(.75),0,7); c.fill(); c.fillStyle=DOURADO; c.beginPath(); c.arc(m(2.8),Y(8.4),m(.58),0,7); c.fill();
+    c.fillStyle='#f3ead2'; c.beginPath(); c.arc(m(2.8),Y(8.4),m(.45),0,7); c.fill(); c.strokeStyle='#a9792c'; c.lineWidth=2; for(let i=0;i<8;i++){ const a=i*Math.PI/4; c.beginPath(); c.moveTo(m(2.8),Y(8.4)); c.lineTo(m(2.8)+Math.cos(a)*m(.45),Y(8.4)+Math.sin(a)*m(.45)); c.stroke(); }
+  });
+  const liso=(w,h)=>texIgreja(w,h,()=>{},{base:false});
+  const baseLado=texIgreja(2.4,11,()=>{});
+  const bloco=new THREE.Mesh(new THREE.BoxGeometry(5.6,11,2.4),[baseLado,baseLado,branco,branco,baseFrente,branco]); bloco.position.set(0,5.5,-.2); ig.add(bloco);
+  const nucleo=new THREE.Mesh(new THREE.BoxGeometry(4.3,3.2,4.3),branco); nucleo.position.set(0,9.5,-1.4); ig.add(nucleo);
+  // andares da torre
+  const ZT=-1.4;
+  const andar=(w,h,y0,draw)=>{ const t=texIgreja(w,h,draw,{base:false}); const a=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),[t,t,branco,branco,t,t]); a.position.set(0,y0+h/2,ZT); ig.add(a); };
+  andar(4.4,4,11,(c,W,H,m,Y)=>{ for(const x of [.75,1.85,2.95]) janelaOgival(c,m(x),Y(3.2),m(.7),Y(.9)); });
+  andar(3.6,3,15,(c,W,H,m,Y)=>{ for(const x of [.65,1.55,2.45]) janelaOgival(c,m(x),Y(2.3),m(.5),Y(.7)); });
+  andar(2.9,2.6,18,(c,W,H,m,Y)=>{ const cx=W/2, cy=Y(1.25), r=m(.85);
+    c.fillStyle=VERDE_AGUA; c.beginPath(); c.arc(cx,cy,r+m(.12),0,7); c.fill(); c.fillStyle='#ffffff'; c.beginPath(); c.arc(cx,cy,r,0,7); c.fill();
+    c.strokeStyle='#222'; for(let i=0;i<12;i++){ const a=i*Math.PI/6; c.lineWidth=i%3?2:4; c.beginPath(); c.moveTo(cx+Math.cos(a)*r*.78,cy+Math.sin(a)*r*.78); c.lineTo(cx+Math.cos(a)*r*.93,cy+Math.sin(a)*r*.93); c.stroke(); }
+    c.lineCap='round'; c.lineWidth=4; c.beginPath(); c.moveTo(cx,cy); c.lineTo(cx+Math.cos(-2.6)*r*.5,cy+Math.sin(-2.6)*r*.5); c.stroke(); c.lineWidth=3; c.beginPath(); c.moveTo(cx,cy); c.lineTo(cx+Math.cos(-.55)*r*.75,cy+Math.sin(-.55)*r*.75); c.stroke(); });
+  andar(2.3,1.8,20.6,(c,W,H,m,Y)=>{ for(const x of [.45,1.3]){ c.fillStyle=VERDE_AGUA; arcoOgival(c,m(x-.08),Y(1.42),m(.71),Y(.2)); c.fill(); c.fillStyle='#3b3430'; arcoOgival(c,m(x),Y(1.3),m(.55),Y(.25)); c.fill(); } });
+  const flecha=new THREE.Mesh(new THREE.ConeGeometry(2.3/Math.SQRT2,6.5,4),branco); flecha.rotation.y=Math.PI/4; flecha.position.set(0,22.4+3.25,ZT); ig.add(flecha);
+  const bola=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),dourado); bola.position.set(0,29,ZT); ig.add(bola);
+  const cv1=new THREE.Mesh(new THREE.BoxGeometry(.13,1.3,.13),dourado); cv1.position.set(0,29.75,ZT); ig.add(cv1);
+  const cv2=new THREE.Mesh(new THREE.BoxGeometry(.65,.13,.13),dourado); cv2.position.set(0,29.95,ZT); ig.add(cv2);
+  // pináculos dourados
+  const pin=new THREE.ConeGeometry(.13,.95,6); const pinM=(x,y,z)=>{ const p=new THREE.Mesh(pin,dourado); p.position.set(x,y+.47,z); ig.add(p); };
+  for(const s of [-1,1]){ pinM(s*6.05,8,.05); pinM(s*2.75,11,.95); for(const t of [-1,1]){ pinM(s*2.15,15,ZT+t*2.15); pinM(s*1.75,18,ZT+t*1.75); } }
+  // prédios vizinhos (como nas fotos)
+  const predioTex=texIgreja(12,6.6,(c,W,H,m,Y)=>{ c.fillStyle='#4a8a3c'; c.fillRect(0,Y(.8),W,m(.8));
+    for(const fy of [1.4,4.2]) for(let i=0;i<5;i++){ const x=1+i*2.1; if(fy<2&&i===2){ c.fillStyle='#5a3a22'; c.fillRect(m(x),Y(2.6),m(1.2),m(1.8)); continue; } c.fillStyle='#355d82'; c.fillRect(m(x),Y(fy+1.4),m(1.2),m(1.2)); }
+    c.fillStyle='#2f3a44'; c.fillRect(m(3.5),Y(3.55),m(5),m(.45)); },{cornija:false,pilastras:false,base:false});
+  const predio=new THREE.Mesh(new THREE.BoxGeometry(12,6.6,10),[branco,branco,lam('#cfcac0'),branco,predioTex,branco]); predio.position.set(20,3.3,1); matriz.add(predio);
+  const verdeTex=new THREE.MeshLambertMaterial({map:fachada('#6dbb45',9,4.2,1)});
+  const predio2=new THREE.Mesh(new THREE.BoxGeometry(9,4.2,8),[lam('#6dbb45'),lam('#6dbb45'),lam('#a9502c'),lam('#6dbb45'),verdeTex,lam('#6dbb45')]); predio2.position.set(-18,2.1,-3); matriz.add(predio2);
+}
+// canteiros brancos com plantas e postes de luz
+{
+  const concreto=lam('#efede7'), folha=lam('#4f9a3a'), folha2=lam('#6cb04a'), cinza=lam('#8d9096');
+  const bola=new THREE.IcosahedronGeometry(.45,1);
+  const canteiro=(x,z,ry=0)=>{ const g=new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry; scene.add(g);
+    const b=new THREE.Mesh(new THREE.BoxGeometry(2.4,.55,1.1),concreto); b.position.y=.275; g.add(b);
+    for(let i=0;i<4;i++){ const p=new THREE.Mesh(bola,i%2?folha:folha2); p.position.set(-.85+i*.57,.7+rand()*.15,(rand()-.5)*.3); p.scale.setScalar(.8+rand()*.5); g.add(p); } };
+  for(const [x,z,r] of [[-9,-4,Math.PI/2],[-9,-16,Math.PI/2],[-9,-28,Math.PI/2],[7,6,0],[-4,6,0]]) canteiro(x,z,r);
+  const poste=(x,z)=>{ const g=new THREE.Group(); g.position.set(x,0,z); scene.add(g);
+    const h=new THREE.Mesh(new THREE.CylinderGeometry(.07,.11,7.5,8),cinza); h.position.y=3.75; g.add(h);
+    const braco=new THREE.Mesh(new THREE.BoxGeometry(1.1,.08,.08),cinza); braco.position.set(.5,7.4,0); g.add(braco);
+    const luz=new THREE.Mesh(new THREE.BoxGeometry(.45,.14,.25),lam('#dadde2')); luz.position.set(1,7.3,0); g.add(luz); };
+  for(const [x,z] of [[-10.5,-10],[-10.5,-34],[6,-24],[4,10],[28,-14],[30,-48]]) poste(x,z);
+  // canteiros na frente da igreja
+  const v=new V3();
+  for(const s of [-1,1]){ v.set(s*10,0,12).applyAxisAngle(new V3(0,1,0),matriz.rotation.y).add(matriz.position); canteiro(v.x,v.z,matriz.rotation.y); }
 }
 // Chapada do Araripe no horizonte
 {
@@ -209,7 +312,7 @@ for(const lado of [-1,1]){
     const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,7),lam(rand()<.5?'#8f7a50':'#7b7f45')); c.position.set(lado*(85+rand()*110),h/2-1,-150+rand()*190); c.scale.z=.7+rand()*.6; scene.add(c); }
 }
 // caatinga: mandacarus, juazeiros, moitas
-function livre(x,z){ if(Math.abs(x)<13 && z>-82 && z<18) return false; return true; }
+function livre(x,z){ if(x>-24 && x<56 && z>-84 && z<32) return false; return true; }
 function espalhar(geos,mats,n,ext,esc,yoff=0){
   const ims=geos.map((g,i)=>new THREE.InstancedMesh(g,mats[i],n)); const m=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), s=new V3(), p=new V3();
   let k=0, tent=0; while(k<n && tent<8000){ tent++; const x=(rand()*2-1)*ext.x, z=ext.z0+rand()*(ext.z1-ext.z0); if(!livre(x,z)) continue;
@@ -232,18 +335,19 @@ function espalhar(geos,mats,n,ext,esc,yoff=0){
   espalhar([new THREE.IcosahedronGeometry(.6,0)],[lam('#8a7d6a')],160,{x:120,z0:-160,z1:70},[.5,1.6]);
   // juazeiros da praça
   const jm=[mergeGeometries(tr),mergeGeometries(cp)];
-  for(const [x,z] of [[-9,-56],[9,-57],[-10.5,-61],[10.5,-60]]){ jm.forEach((g,i)=>{ const m=new THREE.Mesh(g,[lam('#6b4a2e'),lam('#3f7a35')][i]); m.position.set(x,0,z); scene.add(m); }); }
+  for(const [x,z] of [[-11,-21],[-12,-44],[10,3],[-4,-52],[2,-60]]){ jm.forEach((g,i)=>{ const m=new THREE.Mesh(g,[lam('#6b4a2e'),lam('#3f7a35')][i]); m.position.set(x,0,z); scene.add(m); }); }
 }
 // bandeirinhas de São João
 {
   const pos=[], col=[], cord=[]; const pal=PALETA.map(c=>new THREE.Color(c));
-  for(const z of [3,-3,-16,-24,-32,-42]){ const N=28, top=5.1, sag=.7, f=x=>top-sag*(1-(x/6)**2);
+  for(const z of [-3,-14]){ const N=28, top=5.1, sag=.7, f=x=>top-sag*(1-(x/6)**2);
     for(let i=0;i<N;i++){ const x=-6+12*i/N, x2=-6+12*(i+1)/N; cord.push(x,f(x),z,x2,f(x2),z);
       if(i>0){ const y=f(x), c=pal[(i+Math.abs(z))%8]; pos.push(x-.15,y,z, x+.15,y,z, x,y-.38,z); for(let k=0;k<3;k++) col.push(c.r,c.g,c.b); } } }
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   scene.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide})));
   const cg=new THREE.BufferGeometry(); cg.setAttribute('position',new THREE.Float32BufferAttribute(cord,3));
   scene.add(new THREE.LineSegments(cg,new THREE.LineBasicMaterial({color:0x3a3a3a})));
+  for(const z of [-3,-14]) for(const x of [-6.1,6.1]){ const p=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,5.3,8),lam('#5a3418')); p.position.set(x,2.65,z); scene.add(p); }
 }
 // placa de boas-vindas
 function madeiraFundo(g,W,H,r=30){ g.fillStyle='#6b3f1f'; rr(g,0,0,W,H,r); g.fill(); g.fillStyle='#a8743f'; rr(g,14,14,W-28,H-28,r*.6); g.fill(); g.strokeStyle='rgba(80,45,20,.35)'; g.lineWidth=3; for(let y=40;y<H-20;y+=38){ g.beginPath(); g.moveTo(20,y); g.lineTo(W-20,y); g.stroke(); } }
@@ -252,7 +356,7 @@ function madeiraFundo(g,W,H,r=30){ g.fillStyle='#6b3f1f'; rr(g,0,0,W,H,r); g.fil
   const p=makePanel(2.3,1.35,900,(c,W,H)=>{ madeiraFundo(c,W,H);
     drawCentered(c,'BEM-VINDO A',W/2,H*.17,W-80,H*.12,H*.1,'#fff3dc');
     drawCentered(c,'BODOCÓ – PE',W/2,H*.38,W-80,H*.24,H*.22,'#fff3dc',{stroke:10,strokeColor:'#6b3f1f'});
-    drawCentered(c,'Estilingue do Saber',W/2,H*.58,W-80,H*.1,H*.09,'#ffe08a');
+    drawCentered(c,'Praça da Igreja Matriz',W/2,H*.58,W-80,H*.1,H*.09,'#ffe08a');
     drawCentered(c,'Projeto Sesc Ler Bodocó',W/2,H*.73,W-80,H*.1,H*.085,'#fff3dc');
     drawCentered(c,'Professor Márcio Brito',W/2,H*.85,W-80,H*.1,H*.085,'#fff3dc');
   },{transparent:false});
@@ -303,8 +407,29 @@ const _UP=new V3(0,1,0), _sb=new V3();
 function entre(mesh,a,b){ mesh.position.copy(a); _sb.copy(b).sub(a); const l=Math.max(_sb.length(),1e-4); mesh.scale.set(1,l,1); mesh.quaternion.setFromUnitVectors(_UP,_sb.divideScalar(l)); }
 
 const estilingueVR=fazerEstilingue(); estilingueVR.rotation.x=-.35;
-const maoMarcador=new THREE.Mesh(new THREE.SphereGeometry(.03,12,8),lam('#e0b08a'));
-const estilingueTela=fazerEstilingue(); estilingueTela.position.set(.16,-.3,-.55); estilingueTela.rotation.set(-.15,0,0); estilingueTela.visible=false; camera.add(estilingueTela);
+// mão digital (dedos articulados)
+const PELE=new THREE.MeshLambertMaterial({color:'#d9a07a'});
+function segDedo(r,l){ const g=new THREE.CapsuleGeometry(r,l,4,8); g.rotateX(Math.PI/2); g.translate(0,0,-l/2); return g; }
+function fazerMao(lado){
+  const raiz=new THREE.Group(), m=new THREE.Group(); raiz.add(m);
+  const palma=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),PELE); palma.scale.set(.043,.018,.05); m.add(palma);
+  const dedos=[];
+  for(const [x,l1,l2,r] of [[-.027,.028,.024,.0092],[-.009,.032,.027,.0098],[.009,.03,.026,.0095],[.026,.024,.02,.0085]]){
+    const p1=new THREE.Group(); p1.position.set(x,0,-.043); m.add(p1); p1.add(new THREE.Mesh(segDedo(r,l1),PELE));
+    const p2=new THREE.Group(); p2.position.z=-l1; p1.add(p2); p2.add(new THREE.Mesh(segDedo(r*.92,l2),PELE)); dedos.push([p1,p2]); }
+  const t0=new THREE.Group(); t0.position.set(-.036,-.004,-.008); t0.rotation.y=.85; m.add(t0); t0.add(new THREE.Mesh(segDedo(.0108,.026),PELE));
+  const t1=new THREE.Group(); t1.position.z=-.026; t0.add(t1); t1.add(new THREE.Mesh(segDedo(.0098,.022),PELE));
+  const punho=new THREE.Mesh(new THREE.CylinderGeometry(.029,.033,.06,12),PELE); punho.rotation.x=Math.PI/2; punho.scale.set(1,1,.62); punho.position.z=.068; m.add(punho);
+  m.rotation.z=-1.0; m.position.set(.02,.012,.035);   // palma virada para dentro, envolvendo o controle
+  if(lado==='left') raiz.scale.x=-1;                  // espelha para a mão esquerda
+  raiz.userData={dedos,polegar:[t0,t1],curl:.2};
+  return raiz;
+}
+function poseMao(mao,alvo,instantaneo){ const d=mao.userData; d.curl=instantaneo?alvo:d.curl+(alvo-d.curl)*.25;
+  for(const [p1,p2] of d.dedos){ p1.rotation.x=-d.curl*1.35; p2.rotation.x=-d.curl*1.5; }
+  d.polegar[0].rotation.x=-d.curl*.55; d.polegar[1].rotation.x=-d.curl*.9; }
+const maoTela=fazerMao('right'); poseMao(maoTela,1,true);
+const estilingueTela=fazerEstilingue(); estilingueTela.position.set(.16,-.3,-.55); estilingueTela.rotation.set(-.15,0,0); estilingueTela.visible=false; camera.add(estilingueTela); estilingueTela.add(maoTela);
 
 // prévia da trajetória
 const NPREV=36;
@@ -403,7 +528,7 @@ function montarMenu(){
   clearGroup(menu); const lista=[]; menu.userData.botoes=lista;
   const W=2.2, pad=.07; let y=-.09;
   const por=(m,x,h)=>{ m.position.set(x,y-h/2,.012); menu.add(m); };
-  const titulo=makePanel(W-.16,.4,1300,(g,Wp,Hp)=>{ drawCentered(g,'Estilingue do Saber',Wp/2,Hp*.38,Wp-40,Hp*.56,Hp*.44,'#b3401b',{stroke:12,strokeColor:'#fff3dc'}); drawCentered(g,'Atire a pedra na resposta certa! · Cenário inspirado em Bodocó-PE',Wp/2,Hp*.84,Wp-40,Hp*.24,Hp*.15,'#4a2c12'); });
+  const titulo=makePanel(W-.16,.4,1300,(g,Wp,Hp)=>{ drawCentered(g,'Estilingue do Saber',Wp/2,Hp*.38,Wp-40,Hp*.56,Hp*.44,'#b3401b',{stroke:12,strokeColor:'#fff3dc'}); drawCentered(g,'Atire a pedra na resposta certa! · Praça da Igreja Matriz de Bodocó-PE',Wp/2,Hp*.84,Wp-40,Hp*.24,Hp*.15,'#4a2c12'); });
   por(titulo,0,.4); y-=.42;
   if(!BANCO.length){ por(rotulo(W-.2,.12,'Nenhuma pergunta encontrada no arquivo perguntas.js','#b3401b'),0,.12); y-=.14; }
   por(rotulo(W-.3,.075,'Escolha a matéria:'),0,.075); y-=.09;
@@ -530,7 +655,7 @@ for(let i=0;i<2;i++){
   const linha=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(0,0,0),new V3(0,0,-1)]),new THREE.LineBasicMaterial({color:0xffe08a}));
   linha.visible=false; raio.add(linha);
   const c={raio,mao,linha,fonte:null,lado:null,gat:false,aperto:false,hover:null,antA:false,antB:false};
-  raio.addEventListener('connected',e=>{ c.fonte=e.data; c.lado=e.data.handedness; definirPapeis(); });
+  raio.addEventListener('connected',e=>{ c.fonte=e.data; c.lado=e.data.handedness; if(c.modeloMao) mao.remove(c.modeloMao); c.modeloMao=fazerMao(c.lado==='left'?'left':'right'); mao.add(c.modeloMao); definirPapeis(); });
   raio.addEventListener('disconnected',()=>{ c.fonte=null; c.lado=null; definirPapeis(); });
   raio.addEventListener('selectstart',()=>{ c.gat=true; pressionar(c,'gatilho'); });
   raio.addEventListener('selectend',()=>{ c.gat=false; soltar(c); });
@@ -544,7 +669,6 @@ const ctrlPedra=()=>ctrls.find(c=>c.lado && c.lado!==sel.mao)||null;
 function definirPapeis(){
   const s=ctrlEstilingue(), p=ctrlPedra();
   if(s) s.mao.add(estilingueVR); else estilingueVR.parent?.remove(estilingueVR);
-  if(p) p.mao.add(maoMarcador); else maoMarcador.parent?.remove(maoMarcador);
   ladoCesta(sel.mao==='left'?'right':'left');
 }
 let segurando=null; // {mesh, encaixada, puxada, vel, armada}
@@ -586,6 +710,9 @@ function apontadoresVR(){
   if(p && estado==='playing' && !segurando){ p.mao.getWorldPosition(_p); perto=_p.distanceTo(PONTO_CESTA)<.38; if(perto && !mesa.userData.perto) vibrar(p,.25,30); }
   mesa.userData.perto=perto; mesa.userData.brilho.visible=perto;
 }
+function animarMaos(){ const ce=ctrlEstilingue(), cp=ctrlPedra();
+  for(const c of ctrls){ if(!c.modeloMao) continue; c.modeloMao.visible=!!c.fonte;
+    const alvo = c===ce ? 1 : (c===cp && segurando) ? .72 : (c.gat||c.aperto) ? .55 : .18; poseMao(c.modeloMao,alvo); } }
 function clicar(b){ som.clique(); b.userData.onClick(); }
 let mouseHover=null;
 function atualizarHover(){
@@ -663,7 +790,7 @@ document.getElementById('carregando').remove();
 const relogio=new THREE.Clock();
 renderer.setAnimationLoop(()=>{
   const dt=Math.min(relogio.getDelta(),.05);
-  if(renderer.xr.isPresenting){ lerBotoes(); apontadoresVR(); }
+  if(renderer.xr.isPresenting){ lerBotoes(); apontadoresVR(); animarMaos(); }
   atualizarHover(); atualizarEstilingue(); atualizarPedras(dt); atualizarFx(dt);
   renderer.render(scene,camera);
 });
